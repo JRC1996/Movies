@@ -1,6 +1,6 @@
 ﻿namespace Movies.Common
 {
-    public class Response
+    public class Response<T>
     {
         public Response() 
         {
