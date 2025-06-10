@@ -14,9 +14,12 @@ namespace Movies.Models.ViewModels
         [Required(ErrorMessage = "This field is required.")]
         public int IdGenre { get; set; }
 
+        public string? Genre { get; set; }
+
         [Required(ErrorMessage = "This field is required.")]
         public int IdAgeRating { get; set; }
 
+        public string? AgeRating { get; set; }
         public string? ImageURL { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "The minimum value must be 1." )]

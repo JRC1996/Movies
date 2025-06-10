@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Movies.Common;
 using Movies.Models;
 using Movies.Models.ViewModels;
+using System.Linq;
+
 
 namespace Movies.Controllers
 {
@@ -24,10 +27,10 @@ namespace Movies.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<Response<PaginatedResult<Movie>>>>GetMovies([FromQuery] int pageIndex = 1,
+        public async Task<ActionResult<Response<PaginatedResult<MovieViewModel>>>>GetMovies([FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 5)
         {
-            var response = new Response<Movie>();
+            var response = new Response<MovieViewModel>();
 
             if (pageIndex < 1  || pageSize < 1) 
             {
@@ -40,8 +43,25 @@ namespace Movies.Controllers
 
             try 
             {
-                IQueryable<Movie> query = _context.Movies.OrderBy(m => m.IdMovie);
-                var paginatedResult = await PaginatedResult<Movie>.CreateAsync(query, pageIndex, pageSize);
+
+                IQueryable<MovieViewModel> query = _context.Movies.Include(m => m.IdGenreNavigation)
+                    .Include(m => m.IdAgeRatingNavigation)
+                    .Select(m => new MovieViewModel { 
+                    IdMovie = m.IdMovie,
+                    Name = m.Name,
+                    IdGenre = m.IdGenreNavigation.IdGenre,
+                    Genre = m.IdGenreNavigation.GenreName,
+                    IdAgeRating = m.IdAgeRatingNavigation.IdAgeRating,
+                    AgeRating = m.IdAgeRatingNavigation.RatingName,
+                    ImageURL = m.ImageUrl,
+                    DurationMinutes = m.DurationMinutes,
+                    Resume = m.Resume,
+                    ReleaseDate = m.RelaseDate
+
+
+                  });
+               
+                var paginatedResult = await PaginatedResult<MovieViewModel>.CreateAsync(query, pageIndex, pageSize) ;
 
                 response.Success = true;
                 response.Message = "Movies retrieved successfully.";
@@ -53,17 +73,66 @@ namespace Movies.Controllers
             {
                 _logger.LogError(ex, "An error occurred while retrieving movies.");
                 response.Success = false;
-                response.Message = "An error occurred while retrieving movies.";
+                response.Message = ex + "An error occurred while retrieving movies.";
                 response.Data = null;
-                return StatusCode(StatusCodes.Status500InternalServerError, response);
+                return Ok(response);
             }
            
+        }
+
+        [HttpGet("{name}")]
+        public async Task<ActionResult<Response<MovieViewModel>>> GetMovieByName(string name)
+        {
+            var response = new Response<MovieViewModel>();
+            if (string.IsNullOrWhiteSpace(name)) 
+            {
+                response.Success = false;
+                response.Message = "Movie name cannot be empty.";
+                return BadRequest(response);
+            }
+            try 
+            {
+                var movie = await _context.Movies.Include(m => m.IdGenreNavigation)
+                    .Include(m => m.IdAgeRatingNavigation)
+                    .Where(m => m.Name.Contains(name))
+                    .Select(m => new MovieViewModel
+                    {
+                        IdMovie = m.IdMovie,
+                        Name = m.Name,
+                        IdGenre = m.IdGenreNavigation.IdGenre,
+                        Genre = m.IdGenreNavigation.GenreName,
+                        IdAgeRating = m.IdAgeRatingNavigation.IdAgeRating,
+                        AgeRating = m.IdAgeRatingNavigation.RatingName,
+                        ImageURL = m.ImageUrl,
+                        DurationMinutes = m.DurationMinutes,
+                        Resume = m.Resume,
+                        ReleaseDate = m.RelaseDate
+                    })
+                    .FirstOrDefaultAsync();
+                if (movie == null) 
+                {
+                    response.Success = false;
+                    response.Message = "Movie not found.";
+                    return NotFound(response);
+                }
+                response.Success = true;
+                response.Message = "Movie retrieved successfully.";
+                response.Data = movie;
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving the movie by name.");
+                response.Success = false;
+                response.Message = ex + "An error occurred while retrieving the movie by name.";
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> PostMovie(MovieViewModel model)
         {
-            var response = new Response<Movie>();
+            var response = new Response<MovieViewModel>();
 
             using (var transaction = await _context.Database.BeginTransactionAsync()) 
             {
@@ -105,33 +174,100 @@ namespace Movies.Controllers
            
          
         }
+
+        //This needs testing 
         [HttpPut]
         public async Task<IActionResult> PutMovie(MovieViewModel model)
         {
-            var response = new Response<Movie>();
-            try 
+            var response = new Response<MovieViewModel>();
+            
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-            
-            
-            
-            
-            
+                try
+                {
+
+                   var movie = await _context.Movies.FindAsync(model.IdMovie);
+
+                   if (movie == null)
+                   {
+                      response.Success = false;
+                      response.Message = "Movie not found.";
+                      return NotFound(response);
+                   }
+
+                    movie.Name = model.Name;
+                    movie.IdGenre = model.IdGenre;
+                    movie.IdAgeRating = model.IdAgeRating;
+                    movie.ImageUrl = model.ImageURL;
+                    movie.DurationMinutes = model.DurationMinutes;
+                    movie.Resume = model.Resume;
+                    movie.RelaseDate = model.ReleaseDate;
+
+                    _context.Movies.Update(movie);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    response.Success = true;
+                    response.Message = "Movie updated successfully.";
+
+                    return Ok(response);
+
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    _logger.LogError(ex, "An error occurred while updating the movie.");
+                   response.Success = false;
+                   response.Message = ex.Message;
+                   return StatusCode(StatusCodes.Status500InternalServerError, response);
+                }
+
+
+
+
+
             }
+         
             
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while updating the movie.");
-                response.Success = false;
-                response.Message = ex.Message;
-                return StatusCode(StatusCodes.Status500InternalServerError, response);
-            }
-            return Ok();
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> DeleteMovie()
+        //this needs testing
+        [HttpDelete("{name}")]
+        public async Task<IActionResult> DeleteMovie(string name)
         {
-            return Ok();
+            var response = new Response<MovieViewModel>();
+
+            using (var transaction = await _context.Database.BeginTransactionAsync()) 
+            {
+
+                try 
+                {
+                    var movie = await _context.Movies.FindAsync(name);
+
+                    if (movie == null) 
+                    { 
+                        response.Success = false;
+                        response.Message = "Movie not found.";
+                        return NotFound(response);
+
+                    }
+                    _context.Movies.Remove(movie);
+                    await _context.SaveChangesAsync();
+                    transaction.Commit();
+                    response.Success = true;
+                    response.Message = "Movie deleted successfully.";
+                    return Ok(response);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while deleting the movie.");
+                    return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the movie.");
+                }
+
+
+
+            }
+            
         }
     }
 }
