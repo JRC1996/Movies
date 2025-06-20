@@ -74,8 +74,7 @@ namespace Movies.Controllers
                 _logger.LogError(ex, "An error occurred while retrieving movies.");
                 response.Success = false;
                 response.Message = ex + "An error occurred while retrieving movies.";
-                response.Data = null;
-                return Ok(response);
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
            
         }
@@ -90,6 +89,7 @@ namespace Movies.Controllers
                 response.Message = "Movie name cannot be empty.";
                 return BadRequest(response);
             }
+
             try 
             {
                 var movie = await _context.Movies.Include(m => m.IdGenreNavigation)
@@ -175,7 +175,7 @@ namespace Movies.Controllers
          
         }
 
-        //This needs testing 
+        
         [HttpPut]
         public async Task<IActionResult> PutMovie(MovieViewModel model)
         {
@@ -231,7 +231,7 @@ namespace Movies.Controllers
             
         }
 
-        //this needs testing
+        
         [HttpDelete("{name}")]
         public async Task<IActionResult> DeleteMovie(string name)
         {
@@ -242,7 +242,7 @@ namespace Movies.Controllers
 
                 try 
                 {
-                    var movie = await _context.Movies.FindAsync(name);
+                    var movie = await _context.Movies.FirstOrDefaultAsync(m => m.Name == name);
 
                     if (movie == null) 
                     { 
@@ -261,7 +261,9 @@ namespace Movies.Controllers
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "An error occurred while deleting the movie.");
-                    return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while deleting the movie.");
+                    response.Success = false;
+                    response.Message = ex.Message;
+                    return StatusCode(StatusCodes.Status500InternalServerError, response);
                 }
 
 
