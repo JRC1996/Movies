@@ -3,9 +3,9 @@ using Movies.Models.ViewModels;
 
 namespace Movies.Services
 {
-    public interface IUserService
+    public interface IAuthService
     {
-        Task<UserResponse> Auth(AuthViewModel authModel);
+        UserResponse Auth(AuthViewModel model);
        
        
     }
