@@ -150,8 +150,8 @@ namespace Movies.Controllers
                     movie.RelaseDate = model.ReleaseDate;
 
                     _context.Movies.Add(movie); 
-                    _context.SaveChanges();
-                    transaction.Commit();
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
 
                     response.Success = true;
                     response.Message = "Movie added successfully.";
@@ -215,8 +215,8 @@ namespace Movies.Controllers
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    _logger.LogError(ex, "An error occurred while updating the movie.");
+                   transaction.Rollback();
+                   _logger.LogError(ex, "An error occurred while updating the movie.");
                    response.Success = false;
                    response.Message = ex.Message;
                    return StatusCode(StatusCodes.Status500InternalServerError, response);
@@ -253,7 +253,7 @@ namespace Movies.Controllers
                     }
                     _context.Movies.Remove(movie);
                     await _context.SaveChangesAsync();
-                    transaction.Commit();
+                    await transaction.CommitAsync();
                     response.Success = true;
                     response.Message = "Movie deleted successfully.";
                     return Ok(response);
