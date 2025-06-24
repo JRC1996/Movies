@@ -4,7 +4,8 @@ namespace Movies.Models.ViewModels
 {
     public class MovieViewModel
     {
-        [Required]
+     
+        [Key]
         public int IdMovie { get; set; }
 
         [Required(ErrorMessage = "This field is required.")]

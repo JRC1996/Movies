@@ -13,11 +13,13 @@ public partial class UsersMovie
 
     public decimal? Rating { get; set; }
 
-    public string? Status { get; set; }
+    public int IdStatus { get; set; }
 
     public DateTime CreationDate { get; set; }
 
     public virtual Movie IdMovieNavigation { get; set; } = null!;
+
+    public virtual Status IdStatusNavigation { get; set; } = null!;
 
     public virtual User IdUserNavigation { get; set; } = null!;
 }

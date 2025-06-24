@@ -4,7 +4,7 @@ namespace Movies.Models.ViewModels
 {
     public class AgeRatingViewModel
     {
-        [Required]
+        [Key]
         public int IdAgeRaing { get; set; }
 
         [Required]

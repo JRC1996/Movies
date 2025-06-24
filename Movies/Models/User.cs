@@ -13,7 +13,7 @@ public partial class User
 
     public string Password { get; set; } = null!;
 
-    public DateTime CreationDate { get; set; }
+    public DateTime CreationDate { get; set; } = DateTime.UtcNow;
 
-    public virtual ICollection<UsersMovie> UsersMovies { get; set; } = new List<UsersMovie>();
+    public virtual UsersMovie? UsersMovie { get; set; }
 }

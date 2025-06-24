@@ -4,7 +4,7 @@ namespace Movies.Models.ViewModels
 {
     public class GenreViewModel
     {
-        [Required]
+        [Key]
         public int IdGenre { get; set; }
 
         [Required]

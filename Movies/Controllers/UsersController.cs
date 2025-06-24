@@ -75,7 +75,7 @@ namespace Movies.Controllers
 
                     }
 
-                    string hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.Password);
+                    string hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.Password, workFactor:12);
 
                     var user = new User();
 

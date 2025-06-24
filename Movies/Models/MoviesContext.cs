@@ -21,10 +21,13 @@ public partial class MoviesContext : DbContext
 
     public virtual DbSet<Movie> Movies { get; set; }
 
+    public virtual DbSet<Status> Statuses { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UsersMovie> UsersMovies { get; set; }
 
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AgeRating>(entity =>
@@ -34,7 +37,9 @@ public partial class MoviesContext : DbContext
             entity.Property(e => e.CreationDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .IsUnicode(false);
             entity.Property(e => e.RatingName)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -47,7 +52,9 @@ public partial class MoviesContext : DbContext
             entity.Property(e => e.CreationDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.Description).HasColumnType("text");
+            entity.Property(e => e.Description)
+                .HasMaxLength(500)
+                .IsUnicode(false);
             entity.Property(e => e.GenreName)
                 .HasMaxLength(50)
                 .IsUnicode(false);
@@ -64,7 +71,9 @@ public partial class MoviesContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-            entity.Property(e => e.Resume).HasColumnType("text");
+            entity.Property(e => e.Resume)
+                .HasMaxLength(500)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.IdAgeRatingNavigation).WithMany(p => p.Movies)
                 .HasForeignKey(d => d.IdAgeRating)
@@ -77,9 +86,24 @@ public partial class MoviesContext : DbContext
                 .HasConstraintName("FK_Movies_Genres");
         });
 
+        modelBuilder.Entity<Status>(entity =>
+        {
+            entity.HasKey(e => e.IdStatus);
+
+            entity.Property(e => e.CreationDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Description)
+                .HasMaxLength(300)
+                .IsUnicode(false);
+            entity.Property(e => e.StatusName)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+        });
+
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.IdUser);
+
+            entity.HasIndex(e => e.Email, "IX_Email").IsUnique();
 
             entity.Property(e => e.CreationDate)
                 .HasDefaultValueSql("(getdate())")
@@ -99,21 +123,28 @@ public partial class MoviesContext : DbContext
         {
             entity.HasKey(e => e.IdUserMovie);
 
+            entity.HasIndex(e => e.IdMovie, "UNIQ_IdMovie").IsUnique();
+
+            entity.HasIndex(e => e.IdUser, "UNIQ_IdUser").IsUnique();
+
             entity.Property(e => e.CreationDate)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.IdStatus).HasDefaultValue(1);
             entity.Property(e => e.Rating).HasColumnType("decimal(2, 1)");
-            entity.Property(e => e.Status)
-                .HasMaxLength(50)
-                .IsUnicode(false);
 
-            entity.HasOne(d => d.IdMovieNavigation).WithMany(p => p.UsersMovies)
-                .HasForeignKey(d => d.IdMovie)
+            entity.HasOne(d => d.IdMovieNavigation).WithOne(p => p.UsersMovie)
+                .HasForeignKey<UsersMovie>(d => d.IdMovie)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UsersMovies_Movies");
 
-            entity.HasOne(d => d.IdUserNavigation).WithMany(p => p.UsersMovies)
-                .HasForeignKey(d => d.IdUser)
+            entity.HasOne(d => d.IdStatusNavigation).WithMany(p => p.UsersMovies)
+                .HasForeignKey(d => d.IdStatus)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UsersMovies_Statuses");
+
+            entity.HasOne(d => d.IdUserNavigation).WithOne(p => p.UsersMovie)
+                .HasForeignKey<UsersMovie>(d => d.IdUser)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UsersMovies_Users");
         });

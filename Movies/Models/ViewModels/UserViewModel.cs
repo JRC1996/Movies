@@ -4,7 +4,7 @@ namespace Movies.Models.ViewModels
 {
     public class UserViewModel
     {
-
+        [Key]
         public int IdUser { get; set; }
 
         [Required]
@@ -25,6 +25,5 @@ namespace Movies.Models.ViewModels
         [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; } = null!;
 
-        public DateTime CreationDate { get; set; } = DateTime.UtcNow;
     }
 }
