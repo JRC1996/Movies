@@ -17,6 +17,8 @@ public partial class UsersMovie
 
     public DateTime CreationDate { get; set; }
 
+    public string? Review { get; set; }
+
     public virtual Movie IdMovieNavigation { get; set; } = null!;
 
     public virtual Status IdStatusNavigation { get; set; } = null!;

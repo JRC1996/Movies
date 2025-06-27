@@ -27,7 +27,6 @@ public partial class MoviesContext : DbContext
 
     public virtual DbSet<UsersMovie> UsersMovies { get; set; }
 
-    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AgeRating>(entity =>
@@ -132,6 +131,9 @@ public partial class MoviesContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.IdStatus).HasDefaultValue(1);
             entity.Property(e => e.Rating).HasColumnType("decimal(2, 1)");
+            entity.Property(e => e.Review)
+                .HasMaxLength(3000)
+                .IsUnicode(false);
 
             entity.HasOne(d => d.IdMovieNavigation).WithOne(p => p.UsersMovie)
                 .HasForeignKey<UsersMovie>(d => d.IdMovie)

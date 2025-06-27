@@ -232,8 +232,8 @@ namespace Movies.Controllers
         }
 
         
-        [HttpDelete("{name}")]
-        public async Task<IActionResult> DeleteMovie(string name)
+        [HttpDelete("{Id}")]
+        public async Task<IActionResult> DeleteMovie(int Id)
         {
             var response = new Response<MovieViewModel>();
 
@@ -242,7 +242,7 @@ namespace Movies.Controllers
 
                 try 
                 {
-                    var movie = await _context.Movies.FirstOrDefaultAsync(m => m.Name == name);
+                    var movie = await _context.Movies.FirstOrDefaultAsync(m => m.IdMovie == Id);
 
                     if (movie == null) 
                     { 
