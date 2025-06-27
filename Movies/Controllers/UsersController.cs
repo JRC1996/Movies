@@ -7,6 +7,8 @@ using Movies.Services;
 
 namespace Movies.Controllers
 {
+
+    //Pending:  Logut, Refresh Token
     public class UsersController : Controller
     {
         private readonly ILogger<UsersController> _logger;
@@ -19,7 +21,7 @@ namespace Movies.Controllers
             _context = context;
         }
 
-        //This need testing
+        
 
         [HttpPost("Login")]
         public IActionResult Login([FromBody] AuthViewModel model)

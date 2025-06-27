@@ -15,5 +15,7 @@ public partial class User
 
     public DateTime CreationDate { get; set; }
 
+    public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
     public virtual UsersMovie? UsersMovie { get; set; }
 }
