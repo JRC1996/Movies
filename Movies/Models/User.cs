@@ -17,5 +17,7 @@ public partial class User
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
-    public virtual UsersMovie? UsersMovie { get; set; }
+    public virtual ICollection<UsersMovie> UsersMovies { get; set; } = new List<UsersMovie>();
+
+    public virtual ICollection<UsersRole> UsersRoles { get; set; } = new List<UsersRole>();
 }

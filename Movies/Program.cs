@@ -16,6 +16,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+
+// Enable CORS (Cross-Origin Resource Sharing) for the API
 var cors = "_cors";
 builder.Services.AddCors(options => {
     options.AddPolicy(
@@ -29,6 +31,9 @@ builder.Services.AddCors(options => {
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
+
+
+// JWT Authentication configuration
 
 var appSettingsSection = builder.Configuration.GetSection("AppSettings");
 builder.Services.Configure<AppSettings>(appSettingsSection);
@@ -51,6 +56,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// DB Context configuration
 builder.Services.AddDbContext<MoviesContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("MoviesDatabase")));
 

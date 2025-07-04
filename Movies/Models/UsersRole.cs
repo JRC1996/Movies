@@ -3,19 +3,17 @@ using System.Collections.Generic;
 
 namespace Movies.Models;
 
-public partial class RefreshToken
+public partial class UsersRole
 {
-    public int IdRefreshToken { get; set; }
-
-    public string Token { get; set; } = null!;
+    public int IdUsersRoles { get; set; }
 
     public int IdUser { get; set; }
 
-    public DateTime ExpirationDate { get; set; }
+    public int IdRole { get; set; }
 
     public DateTime CreationDate { get; set; }
 
-    public bool Revoked { get; set; }
+    public virtual Role IdRoleNavigation { get; set; } = null!;
 
     public virtual User IdUserNavigation { get; set; } = null!;
 }

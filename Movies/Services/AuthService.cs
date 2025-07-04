@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Movies.Common;
 using Movies.Models;
@@ -56,15 +57,38 @@ namespace Movies.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_appSettings.Secret); // Convierte la clave secreta a bytes
 
+            //Para obtener los roles del usuario
+            var userRoles = _context.UsersRoles.Where(ur => ur.IdUser == user.IdUser)
+                            .Join(_context.Roles, ur => ur.IdRole, r => r.IdRole, (ur, r) => r.RoleName).ToList();
+
+            //Permisos asociados a los roles del usuario
+
+            var rolesId = _context.UsersRoles.Where(ur => ur.IdUser == user.IdUser).Select(ur => ur.IdRole).ToList();
+
+            //Permisos unico asociados a los roles del usuario
+
+            var userPermissions = _context.RolesPermissions.Where(rp => rolesId.Contains(rp.IdRole))
+                                   .Include(rp => rp.IdPermissionNavigation).Select(rp => rp.IdPermissionNavigation.PermissionName)
+                                   .Distinct().ToList();
+
+
+            var Claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.IdUser.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim("FullName", user.FullName),
+                
+            };
+
+            foreach (var role in userRoles)
+            {
+                Claims.Add(new Claim(ClaimTypes.Role, role));
+            }
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
 
-                Subject = new ClaimsIdentity(new Claim[] 
-                {
-                     new Claim(ClaimTypes.NameIdentifier, user.IdUser.ToString()),
-                     new Claim(ClaimTypes.Email, user.Email), 
-                }), 
-
+                Subject = new ClaimsIdentity(Claims),
                 Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };

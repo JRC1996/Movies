@@ -25,5 +25,5 @@ public partial class Movie
 
     public virtual Genre IdGenreNavigation { get; set; } = null!;
 
-    public virtual UsersMovie? UsersMovie { get; set; }
+    public virtual ICollection<UsersMovie> UsersMovies { get; set; } = new List<UsersMovie>();
 }
