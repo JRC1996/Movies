@@ -58,7 +58,7 @@ namespace Movies.Controllers
         }
 
 
-        // This need testing
+
         [HttpPost("Register")]
 
         public async Task<IActionResult> Register(UserViewModel model) 
@@ -78,6 +78,8 @@ namespace Movies.Controllers
                     }
 
                     string hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.Password, workFactor:12);
+                    var role = _context.Roles.FirstOrDefault(r => r.RoleName == "User");
+
 
                     var user = new User();
 
@@ -87,7 +89,18 @@ namespace Movies.Controllers
                     
                     _context.Users.Add(user);
                     await _context.SaveChangesAsync();
+
+                    var userRole = new UsersRole
+                    {
+                        IdUser = user.IdUser,
+                        IdRole = role.IdRole
+                    };
+
+                    _context.UsersRoles.Add(userRole);
+                    await _context.SaveChangesAsync();
+
                     await transaction.CommitAsync();
+
 
                     response.Success = true;
                     response.Message = "User registered successfully.";
