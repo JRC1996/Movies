@@ -8,7 +8,7 @@ using Movies.Services;
 namespace Movies.Controllers
 {
 
-    //Pending:  Logut, Refresh Token
+    //Pending:  Logut
     public class UsersController : Controller
     {
         private readonly ILogger<UsersController> _logger;
@@ -24,13 +24,15 @@ namespace Movies.Controllers
         
 
         [HttpPost("Login")]
-        public IActionResult Login([FromBody] AuthViewModel model)
+        public async Task<IActionResult> Login([FromBody] AuthViewModel model)
         {
             var response = new Response<User>();
+
             try 
             {
               
-                var userResponse = _authService.Auth(model);
+                var userResponse = await _authService.Auth(model);
+
 
                 if (userResponse == null)
                 {
@@ -56,6 +58,7 @@ namespace Movies.Controllers
             }
             
         }
+
 
 
 

@@ -10,6 +10,7 @@ namespace Movies.Models.ViewModels
         public string Email { get; set; }
 
         [Required(ErrorMessage = "This field is required.")]
+        [PasswordPropertyText]
         public string Password { get; set; }
     }
 }

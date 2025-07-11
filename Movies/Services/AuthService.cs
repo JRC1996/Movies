@@ -6,7 +6,9 @@ using Movies.Models;
 using Movies.Models.ViewModels;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Movies.Services
 {
@@ -24,14 +26,52 @@ namespace Movies.Services
             
         }
 
+        /*
+        public async Task<UserResponse> RefreshTokenAsync(string oldRefreshToken, int userId) 
+        {
+
+                
+            var user = await ValidateRefreshToken();
+
+            if (user is null)
+                return null; // Refresh token is invalid or expired
+            
+
+            return await user;
+            
+        }
+
+        */
+
+        private async Task<RefreshToken> ValidateRefreshToken(string refreshToken, int userId)
+        {
+
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken && r.IdUser == userId);
+
+            if (token is null || token.ExpirationDate <= DateTime.UtcNow)             
+                return null;
 
 
-        public UserResponse Auth(AuthViewModel model) 
+            return token;
+        }
+
+
+        //To generate a refresh token
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+
+        public async Task<UserResponse>Auth(AuthViewModel model) 
         { 
-            UserResponse userResponse = new UserResponse();
+                
+            var userResponse = new UserResponse();
 
-
-            var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+            var  user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
      
             if (user == null ||  string.IsNullOrEmpty(user.Password))
             {
@@ -45,12 +85,22 @@ namespace Movies.Services
                 return null;
             }
 
+            var refreshToken = new RefreshToken();
+
+            refreshToken.Token = GenerateRefreshToken();
+            refreshToken.CreationDate = DateTime.UtcNow;
+            refreshToken.ExpirationDate = DateTime.UtcNow.AddDays(7); // Set expiration date to 7 days from now
+            refreshToken.Revoked = false;
+            refreshToken.IdUser = user.IdUser;
+            await _context.RefreshTokens.AddAsync(refreshToken);
+            await _context.SaveChangesAsync();
+
             userResponse.Email = user.Email;
             userResponse.Token = GenerateJwtToken(user);
+            userResponse.RefreshToken = refreshToken.Token;
 
             return userResponse;
         }
-        
 
         public string GenerateJwtToken(User user)
         {
@@ -74,10 +124,12 @@ namespace Movies.Services
 
             var Claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.IdUser.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim("FullName", user.FullName),
-                
+                new Claim(JwtRegisteredClaimNames.Sub, user.IdUser.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Name, user.FullName),
+                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToString(), ClaimValueTypes.Integer64),
+                new Claim(JwtRegisteredClaimNames.Iss, _appSettings.Issuer),
+                new Claim(JwtRegisteredClaimNames.Aud, _appSettings.Audience)
             };
 
             foreach (var role in userRoles)
@@ -97,5 +149,6 @@ namespace Movies.Services
             return tokenHandler.WriteToken(token);
         }
 
+       
     }
 }

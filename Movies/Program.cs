@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Movies.Common;
@@ -33,6 +35,20 @@ builder.Services.AddCors(options => {
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 
+builder.Services.AddRateLimiter(options => {
+
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddFixedWindowLimiter("Fixed", opt =>
+    {
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.PermitLimit = 100; 
+
+    });
+
+});
+
+
 // JWT Authentication configuration
 
 var appSettingsSection = builder.Configuration.GetSection("AppSettings");
@@ -40,6 +56,11 @@ builder.Services.Configure<AppSettings>(appSettingsSection);
 
 var appSettings = appSettingsSection.Get<AppSettings>();
 var key = Encoding.ASCII.GetBytes(appSettings.Secret);
+var issuer = builder.Configuration["AppSettings:Issuer"];
+var audience = builder.Configuration["AppSettings:Audience"];
+
+
+
 builder.Services.AddAuthentication(options => 
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -51,8 +72,11 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuerSigningKey = true,
         IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = false, // En producción, es mejor validar el emisor y la audiencia.
-        ValidateAudience = false // En producción, es mejor validar el emisor y la audiencia.
+        ValidateIssuer = true, // En producción, es mejor validar el emisor y la audiencia.
+        ValidateAudience = true,// En producción, es mejor validar el emisor y la audiencia.
+        ValidateLifetime = true, // Configura el emisor válido
+        ValidIssuer = issuer, 
+        ValidAudience = audience
     };
 });
 
@@ -71,13 +95,13 @@ if (app.Environment.IsDevelopment())
 }
 
 
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 
 app.UseCors(cors);
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapControllers();
+app.MapControllers().RequireRateLimiting("Fixed"); 
 
 app.Run();
