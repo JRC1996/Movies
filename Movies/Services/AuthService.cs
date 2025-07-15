@@ -26,33 +26,46 @@ namespace Movies.Services
             
         }
 
-        /*
-        public async Task<UserResponse> RefreshTokenAsync(string oldRefreshToken, int userId) 
+      
+
+        public async Task<UserResponse> ValidateRefreshToken(string refreshToken, string email)
         {
+            var tokenEntity = await _context.RefreshTokens
+                .Include(rt => rt.IdUserNavigation)
+                .FirstOrDefaultAsync(rt => rt.Token == refreshToken && rt.IdUserNavigation.Email == email  &&  !rt.Revoked);
 
-                
-            var user = await ValidateRefreshToken();
+            if(tokenEntity == null || tokenEntity.ExpirationDate < DateTime.UtcNow)
+                return null; 
 
-            if (user is null)
-                return null; // Refresh token is invalid or expired
-            
+            tokenEntity.Revoked = true;
+            _context.RefreshTokens.Update(tokenEntity);
 
-            return await user;
-            
-        }
+            var accessToken = GenerateJwtToken(tokenEntity.IdUserNavigation);
 
-        */
+            var newRefreshToken = GenerateRefreshToken();
 
-        private async Task<RefreshToken> ValidateRefreshToken(string refreshToken, int userId)
-        {
+            var newTokenEntity = new RefreshToken
+            {
+                Token = newRefreshToken,
+                CreationDate = DateTime.UtcNow,
+                ExpirationDate = DateTime.UtcNow.AddDays(7), 
+                Revoked = false,
+                IdUser = tokenEntity.IdUserNavigation.IdUser
+            };
 
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(r => r.Token == refreshToken && r.IdUser == userId);
+            await _context.RefreshTokens.AddAsync(newTokenEntity);
+            await _context.SaveChangesAsync();
 
-            if (token is null || token.ExpirationDate <= DateTime.UtcNow)             
-                return null;
+            return new UserResponse
+            {
+                Email = tokenEntity.IdUserNavigation.Email,
+                Token = accessToken,
+                RefreshToken = newRefreshToken
+
+            };
 
 
-            return token;
+
         }
 
 
@@ -149,6 +162,19 @@ namespace Movies.Services
             return tokenHandler.WriteToken(token);
         }
 
-       
+
+        public async Task<bool> RevokeRefreshToken(int userId)
+        {
+            var tokens = await _context.RefreshTokens.Where(r => r.IdUser == userId && !r.Revoked).ToListAsync();
+           
+            foreach (var token in tokens)
+            {
+                token.Revoked = true;
+                _context.RefreshTokens.Update(token);
+            }
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

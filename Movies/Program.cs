@@ -74,7 +74,7 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true, // En producción, es mejor validar el emisor y la audiencia.
         ValidateAudience = true,// En producción, es mejor validar el emisor y la audiencia.
-        ValidateLifetime = true, // Configura el emisor válido
+        ValidateLifetime = true, 
         ValidIssuer = issuer, 
         ValidAudience = audience
     };

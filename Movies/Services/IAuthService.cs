@@ -8,8 +8,8 @@ namespace Movies.Services
     {
        public Task <UserResponse> Auth(AuthViewModel model);
         
-       
+       public Task<UserResponse> ValidateRefreshToken(string refreshToken, string email);
 
-
+        public Task<bool> RevokeRefreshToken (int userId);
     }
 }

@@ -8,7 +8,7 @@ using Movies.Services;
 namespace Movies.Controllers
 {
 
-    //Pending:  Logut
+    
     public class UsersController : Controller
     {
         private readonly ILogger<UsersController> _logger;
@@ -21,16 +21,16 @@ namespace Movies.Controllers
             _context = context;
         }
 
-        
+
 
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] AuthViewModel model)
         {
             var response = new Response<User>();
 
-            try 
+            try
             {
-              
+
                 var userResponse = await _authService.Auth(model);
 
 
@@ -49,25 +49,23 @@ namespace Movies.Controllers
                 return Ok(response);
 
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred during login.");
                 response.Success = false;
                 response.Message = ex + "An error occurred during login. Please try again later.";
                 return StatusCode(StatusCodes.Status500InternalServerError, response);
             }
-            
+
         }
-
-
 
 
         [HttpPost("Register")]
 
-        public async Task<IActionResult> Register(UserViewModel model) 
+        public async Task<IActionResult> Register([FromBody]UserViewModel model)
         {
 
-            using (var transaction = await _context.Database.BeginTransactionAsync()) 
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
                 var response = new Response<User>();
                 try
@@ -80,7 +78,7 @@ namespace Movies.Controllers
 
                     }
 
-                    string hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.Password, workFactor:12);
+                    string hashedPassword = BCrypt.Net.BCrypt.HashPassword(model.Password, workFactor: 12);
                     var role = _context.Roles.FirstOrDefault(r => r.RoleName == "User");
 
 
@@ -89,7 +87,7 @@ namespace Movies.Controllers
                     user.FullName = model.FullName;
                     user.Email = model.Email;
                     user.Password = hashedPassword;
-                    
+
                     _context.Users.Add(user);
                     await _context.SaveChangesAsync();
 
@@ -107,7 +105,7 @@ namespace Movies.Controllers
 
                     response.Success = true;
                     response.Message = "User registered successfully.";
-                    
+
                     return Ok(response);
 
                 }
@@ -121,14 +119,87 @@ namespace Movies.Controllers
 
                 }
 
+            }
+
+        }
+
+        [HttpPost("Refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenViewModel tokenModel)
+        {
+            var response = new Response<string>();
 
 
+            if (string.IsNullOrWhiteSpace(tokenModel.RefreshToken) || string.IsNullOrWhiteSpace(tokenModel.Email))
+            {
+                response.Success = false;
+                response.Message = "Email and refresh token are required.";
+                response.Data = null;
+
+                return BadRequest(response);
 
             }
 
 
-           
+            try
+            {
+                var userResponse = await _authService.ValidateRefreshToken(tokenModel.RefreshToken, tokenModel.Email);
+
+                if (userResponse == null)
+                {
+                    response.Success = false;
+                    response.Message = "Invalid refresh token or email.";
+                    response.Data = null;
+
+                    return Unauthorized(response);
+                }
+
+                response.Success = true;
+                response.Message = "Refresh token validated successfully.";
+                response.Data = userResponse;
+
+                return Ok(response);
+
+            }
+            catch (Exception ex)
+            {
+                response.Success = false;
+                response.Message = "An error occurred while validating the refresh token: " + ex.Message;
+                response.Data = null;
+
+                return StatusCode(500, response);
+
+            }
+
         }
 
+
+
+        [HttpPost("LogOut")]
+
+        public async Task<IActionResult> LogOut([FromBody] LogOutViewModel model)
+        {
+            var response = new Response<string>();
+            try 
+            {
+
+                var logOut = await _authService.RevokeRefreshToken(model.UserId);
+
+                response.Success = true;
+                response.Message = "User logged out successfully.";
+                    
+                return Ok(response);
+                
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred during logout.");
+                response.Success = false;
+                response.Message = ("An error occurred during logout. Please try again later. " + ex);
+                return StatusCode(StatusCodes.Status500InternalServerError, response);
+
+            }
+
+        }
     }
 }

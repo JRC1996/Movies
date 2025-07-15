@@ -4,9 +4,7 @@ namespace Movies.Models.ViewModels
 {
     public class UserViewModel
     {
-        [Key]
-        public int IdUser { get; set; }
-
+       
         [Required]
         public string FullName { get; set; } = null!;
 
