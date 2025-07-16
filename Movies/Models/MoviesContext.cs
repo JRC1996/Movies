@@ -6,7 +6,9 @@ namespace Movies.Models;
 
 public partial class MoviesContext : DbContext
 {
-    
+    public MoviesContext()
+    {
+    }
 
     public MoviesContext(DbContextOptions<MoviesContext> options)
         : base(options)
@@ -35,7 +37,7 @@ public partial class MoviesContext : DbContext
 
     public virtual DbSet<UsersRole> UsersRoles { get; set; }
 
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AgeRating>(entity =>
@@ -232,7 +234,7 @@ public partial class MoviesContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
             entity.Property(e => e.IdStatus).HasDefaultValue(1);
-            entity.Property(e => e.Rating).HasColumnType("decimal(2, 1)");
+            entity.Property(e => e.Rating).HasColumnType("decimal(3, 1)");
             entity.Property(e => e.Review)
                 .HasMaxLength(3000)
                 .IsUnicode(false);

@@ -27,8 +27,7 @@ namespace Movies.Controllers
 
 
         [HttpGet]
-        public async Task<ActionResult<Response<PaginatedResult<MovieViewModel>>>>GetMovies([FromQuery] int pageIndex = 1,
-        [FromQuery] int pageSize = 5)
+        public async Task<ActionResult<Response<PaginatedResult<MovieViewModel>>>>GetMovies([FromQuery (Name = "Page")] int pageIndex = 1, [FromQuery(Name = "Movies")] int pageSize = 5)
         {
             var response = new Response<MovieViewModel>();
 
@@ -130,7 +129,7 @@ namespace Movies.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> PostMovie(MovieViewModel model)
+        public async Task<IActionResult> PostMovie([FromBody]MovieViewModel model)
         {
             var response = new Response<MovieViewModel>();
 
@@ -177,7 +176,7 @@ namespace Movies.Controllers
 
         
         [HttpPut]
-        public async Task<IActionResult> PutMovie(MovieViewModel model)
+        public async Task<IActionResult> PutMovie([FromBody]MovieViewModel model)
         {
             var response = new Response<MovieViewModel>();
             
@@ -233,7 +232,7 @@ namespace Movies.Controllers
 
         
         [HttpDelete("{Id}")]
-        public async Task<IActionResult> DeleteMovie(int Id)
+        public async Task<IActionResult> DeleteMovie([FromRoute]int Id)
         {
             var response = new Response<MovieViewModel>();
 
@@ -244,12 +243,12 @@ namespace Movies.Controllers
                 {
                     var movie = await _context.Movies.FirstOrDefaultAsync(m => m.IdMovie == Id);
 
-                    if (movie == null) 
+                     if (movie == null) 
                     { 
                         response.Success = false;
-                        response.Message = "Movie not found.";
+                        response.Message = "Movie Id cannot be null.";
                         return NotFound(response);
-
+                  
                     }
                     _context.Movies.Remove(movie);
                     await _context.SaveChangesAsync();
