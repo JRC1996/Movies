@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Movies.Common;
@@ -27,6 +28,7 @@ namespace Movies.Controllers
 
 
         [HttpGet]
+        [Authorize]
         public async Task<ActionResult<Response<PaginatedResult<MovieViewModel>>>>GetMovies([FromQuery (Name = "Page")] int pageIndex = 1, [FromQuery(Name = "Movies")] int pageSize = 5)
         {
             var response = new Response<MovieViewModel>();
@@ -79,6 +81,7 @@ namespace Movies.Controllers
         }
 
         [HttpGet("{name}")]
+        [Authorize]
         public async Task<ActionResult<Response<MovieViewModel>>> GetMovieByName(string name)
         {
             var response = new Response<MovieViewModel>();
@@ -129,6 +132,7 @@ namespace Movies.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PostMovie([FromBody]MovieViewModel model)
         {
             var response = new Response<MovieViewModel>();
@@ -176,6 +180,7 @@ namespace Movies.Controllers
 
         
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> PutMovie([FromBody]MovieViewModel model)
         {
             var response = new Response<MovieViewModel>();
@@ -232,6 +237,7 @@ namespace Movies.Controllers
 
         
         [HttpDelete("{Id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteMovie([FromRoute]int Id)
         {
             var response = new Response<MovieViewModel>();
