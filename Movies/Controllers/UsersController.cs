@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Movies.Common;
 using Movies.Models;
 using Movies.Models.ViewModels;
@@ -14,12 +16,14 @@ namespace Movies.Controllers
         private readonly ILogger<UsersController> _logger;
         private IAuthService _authService;
         private readonly MoviesContext _context;
-        public UsersController(ILogger<UsersController> logger, IAuthService authService, MoviesContext context)
+        private readonly ITokenBlackListService _tokenBL;
+        public UsersController(ILogger<UsersController> logger, ITokenBlackListService tokenBL , IAuthService authService, MoviesContext context)
         {
             _logger = logger;
             _authService = authService;
             _context = context;
-        }
+            _tokenBL = tokenBL;
+        }   
 
 
 
@@ -175,14 +179,20 @@ namespace Movies.Controllers
 
 
         [HttpPost("LogOut")]
-
+        [Authorize]
         public async Task<IActionResult> LogOut([FromBody] LogOutViewModel model)
         {
             var response = new Response<string>();
+
             try 
             {
 
                 var logOut = await _authService.RevokeRefreshToken(model.UserId);
+
+                //FIX 
+                var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti);
+
+                //pending
 
                 response.Success = true;
                 response.Message = "User logged out successfully.";
