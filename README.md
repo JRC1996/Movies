@@ -1,1 +1,1 @@
-Version del API de peliculas actualizada (WIP)
+Version del API de peliculas actualizada
