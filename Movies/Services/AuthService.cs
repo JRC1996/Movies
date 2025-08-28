@@ -42,7 +42,7 @@ namespace Movies.Services
 
             var accessToken = GenerateJwtToken(tokenEntity.IdUserNavigation);
 
-            var newRefreshToken = GenerateRefreshToken();
+            var newRefreshToken = RefreshTokenGenerator.GenerateRefreshToken();
 
             var newTokenEntity = new RefreshToken
             {
@@ -68,17 +68,6 @@ namespace Movies.Services
 
         }
 
-
-        //To generate a refresh token
-        private string GenerateRefreshToken()
-        {
-            var randomNumber = new byte[32];
-            var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber);
-            return Convert.ToBase64String(randomNumber);
-        }
-
-
         public async Task<UserResponse>Auth(AuthViewModel model) 
         { 
                 
@@ -100,7 +89,7 @@ namespace Movies.Services
 
             var refreshToken = new RefreshToken();
 
-            refreshToken.Token = GenerateRefreshToken();
+            refreshToken.Token = RefreshTokenGenerator.GenerateRefreshToken();
             refreshToken.CreationDate = DateTime.UtcNow;
             refreshToken.ExpirationDate = DateTime.UtcNow.AddDays(7); // Set expiration date to 7 days from now
             refreshToken.Revoked = false;

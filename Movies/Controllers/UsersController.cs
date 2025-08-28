@@ -16,13 +16,13 @@ namespace Movies.Controllers
         private readonly ILogger<UsersController> _logger;
         private IAuthService _authService;
         private readonly MoviesContext _context;
-        private readonly ITokenBlackListService _tokenBL;
-        public UsersController(ILogger<UsersController> logger, ITokenBlackListService tokenBL , IAuthService authService, MoviesContext context)
+      //  private readonly ITokenBlackListService _tokenBL;
+        public UsersController(ILogger<UsersController> logger, IAuthService authService, MoviesContext context)
         {
             _logger = logger;
             _authService = authService;
             _context = context;
-            _tokenBL = tokenBL;
+           // _tokenBL = tokenBL;
         }   
 
 
@@ -176,7 +176,7 @@ namespace Movies.Controllers
 
         }
 
-
+        
 
         [HttpPost("LogOut")]
         [Authorize]
@@ -187,13 +187,33 @@ namespace Movies.Controllers
             try 
             {
 
+                //Normal LogOut without token blacklist
                 var logOut = await _authService.RevokeRefreshToken(model.UserId);
 
-                //FIX 
+
+
+                /*
+                 * LogOut with token blacklist (Not Implemented)
+                 * 
+                var logOut = await _authService.RevokeRefreshToken(model.UserId);
+
+             
                 var jtiClaim = User.FindFirst(JwtRegisteredClaimNames.Jti);
+                if( jtiClaim == null || string.IsNullOrEmpty(jtiClaim.Value))
+                    return BadRequest("Token ID not found in the token claims.");
 
-                //pending
 
+                string tokenId = jtiClaim.Value;
+
+                var expClaim = User.FindFirst(JwtRegisteredClaimNames.Exp);
+                if (expClaim == null || !long.TryParse(expClaim.Value, out long unixExpiration))
+                    return BadRequest("Expiration claim not found in the token claims.");
+
+                var expiration = DateTimeOffset.FromUnixTimeSeconds(unixExpiration).UtcDateTime;
+
+               await _tokenBL.AddToBlacklistAsync(tokenId, expiration);
+               
+                */
                 response.Success = true;
                 response.Message = "User logged out successfully.";
                     
@@ -209,7 +229,8 @@ namespace Movies.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, response);
 
             }
-
+        
         }
     }
+
 }

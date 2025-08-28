@@ -13,6 +13,11 @@ using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 
+// POR AHORA NO SE ESTA USANDO, SE USARA EN UN FUTURO
+using StackExchange.Redis;
+
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -68,8 +73,15 @@ builder.Services.AddCors(options => {
 });
 
 
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<ITokenBlackListService, TokenBLService>();
+// Redis configuration for the token blacklist service
+/*
+builder.Services.AddScoped<IConnectionMultiplexer>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var redisConnectionString = configuration.GetConnectionString("RedisConnection");
+
+    return ConnectionMultiplexer.Connect(redisConnectionString);
+});*/
 
 //Rate Limiting configuration
 
@@ -86,8 +98,11 @@ builder.Services.AddRateLimiter(options => {
 
 });
 
+//Cache configuration
+builder.Services.AddOutputCache(options => {
 
-
+    options.AddPolicy("Short", p => p.Expire(TimeSpan.FromSeconds(60)));
+});
 
 // JWT Authentication configuration
 
@@ -99,11 +114,12 @@ var key = Encoding.ASCII.GetBytes(appSettings.Secret);
 var issuer = builder.Configuration["AppSettings:Issuer"];
 var audience = builder.Configuration["AppSettings:Audience"];
 
-builder.Services.AddAuthentication(options => 
+builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(d =>{
+}).AddJwtBearer(d =>
+{
     d.RequireHttpsMetadata = true;
     d.SaveToken = true;
     d.TokenValidationParameters = new TokenValidationParameters
@@ -112,10 +128,14 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key),
         ValidateIssuer = true, // En producción, es mejor validar el emisor y la audiencia.
         ValidateAudience = true,// En producción, es mejor validar el emisor y la audiencia.
-        ValidateLifetime = true, 
-        ValidIssuer = issuer, 
+        ValidateLifetime = true,
+        ValidIssuer = issuer,
         ValidAudience = audience
     };
+
+});/*;
+    * This is for using the token blacklist service with Redis
+    * 
     d.Events = new JwtBearerEvents
     {
         OnTokenValidated = async context =>
@@ -140,7 +160,12 @@ builder.Services.AddAuthentication(options =>
         }
     };
 
-});
+});*/
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+//Service for the token blacklist using Redis (Not implemented yet)
+//builder.Services.AddScoped<ITokenBlackListService, TokenBLService>();
 
 // DB Context configuration
 builder.Services.AddDbContext<MoviesContext>(options =>
@@ -159,6 +184,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.UseHttpsRedirection();
+
+app.UseOutputCache();
 
 app.UseCors(cors);
 app.UseRouting();

@@ -1,6 +1,8 @@
 ﻿
 using StackExchange.Redis;
 
+
+//BL Service for token blacklist management example
 namespace Movies.Services
 {
     public class TokenBLService : ITokenBlackListService

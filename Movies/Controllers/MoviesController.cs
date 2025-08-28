@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
 using Movies.Common;
 using Movies.Models;
@@ -25,10 +26,8 @@ namespace Movies.Controllers
 
 
 
-
-
         [HttpGet]
-        [Authorize]
+        [OutputCache(PolicyName = "Short")]
         public async Task<ActionResult<Response<PaginatedResult<MovieViewModel>>>>GetMovies([FromQuery (Name = "Page")] int pageIndex = 1, [FromQuery(Name = "Movies")] int pageSize = 5)
         {
             var response = new Response<MovieViewModel>();
@@ -137,8 +136,7 @@ namespace Movies.Controllers
         {
             var response = new Response<MovieViewModel>();
 
-            using (var transaction = await _context.Database.BeginTransactionAsync()) 
-            {
+            
 
                 try
                 {
@@ -154,7 +152,7 @@ namespace Movies.Controllers
 
                     _context.Movies.Add(movie); 
                     await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+   
 
                     response.Success = true;
                     response.Message = "Movie added successfully.";
@@ -165,7 +163,7 @@ namespace Movies.Controllers
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
+                    
                     _logger.LogError(ex, "An error occurred while adding the movie.");
                     response.Success = false;
                     response.Message = ex.Message;
@@ -173,7 +171,7 @@ namespace Movies.Controllers
 
                 }
 
-            }
+            
            
          
         }
@@ -185,8 +183,7 @@ namespace Movies.Controllers
         {
             var response = new Response<MovieViewModel>();
             
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
+            
                 try
                 {
 
@@ -209,7 +206,7 @@ namespace Movies.Controllers
 
                     _context.Movies.Update(movie);
                     await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+                    
 
                     response.Success = true;
                     response.Message = "Movie updated successfully.";
@@ -219,18 +216,14 @@ namespace Movies.Controllers
                 }
                 catch (Exception ex)
                 {
-                   transaction.Rollback();
+                  
                    _logger.LogError(ex, "An error occurred while updating the movie.");
                    response.Success = false;
                    response.Message = ex.Message;
                    return StatusCode(StatusCodes.Status500InternalServerError, response);
                 }
 
-
-
-
-
-            }
+            
          
             
         }
@@ -242,8 +235,6 @@ namespace Movies.Controllers
         {
             var response = new Response<MovieViewModel>();
 
-            using (var transaction = await _context.Database.BeginTransactionAsync()) 
-            {
 
                 try 
                 {
@@ -258,7 +249,7 @@ namespace Movies.Controllers
                     }
                     _context.Movies.Remove(movie);
                     await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+                    
                     response.Success = true;
                     response.Message = "Movie deleted successfully.";
                     return Ok(response);
@@ -273,7 +264,7 @@ namespace Movies.Controllers
 
 
 
-            }
+            
             
         }
     }
